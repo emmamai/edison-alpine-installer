@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Short URL to this file: https://git.io/vFXSd
+# To run this from an internet connected edison: curl -L https://git.io/vFXSd | sh
+
 distro=Alpine Linux
 distro_short=alpine
 
@@ -64,7 +67,7 @@ cd /tmp
 
 if [ ! -f ${rootfs_filename} ]; then
 	echo == Downloading rootfs...
-	wget ${rootfs_url}
+	curl -L ${rootfs_url} -o ${rootfs_filename}
 	if [ ! $? ]; then
 		echo == Couldn\'t download the mini rootfs.
 		echo == Check your internet connection.
@@ -74,7 +77,7 @@ fi
 
 if [ ! -f stage2.sh ]; then
 	echo == Downloading stage2...
-	wget ${stage2_url}
+	curl -L ${stage2_url} -o stage2.sh
 	if [ ! $? ]; then
 		echo == Couldn\'t download stage2.
 		echo == Check your internet connection.
@@ -84,7 +87,7 @@ fi
 
 if [ ! -f stage3.sh ]; then
 	echo == Downloading stage3...
-	wget ${stage3_url}
+	curl -L ${stage3_url} -o stage3.sh
 	if [ ! $? ]; then
 		echo == Couldn\'t download stage3.
 		echo == Check your internet connection.
@@ -116,6 +119,8 @@ mount -t devtmpfs devtmpfs /mnt/dev
 cp /etc/resolv.conf /mnt/etc/resolv.conf
 cp stage2.sh /mnt/stage2.sh
 cp stage3.sh /mnt/stage3.sh
+chmod 755 /mnt/stage2.sh
+chmod 755 /mnt/stage3.sh
 
 echo Entering chroot
 
