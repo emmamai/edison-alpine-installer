@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # Short URL to this file: https://git.io/vFXSd
-# To run this from an internet connected edison: curl -L https://git.io/vFXSd | sh
+# To run this from an internet connected edison: curl -L https://git.io/vFXSd -o /tmp/i.sh; sh /tmp/i.sh
 
-distro=Alpine Linux
+distro="Alpine Linux"
 distro_short=alpine
 
 alpine_version=3.6
@@ -141,9 +141,10 @@ echo ===================================================
 echo -n "> "
 read consent
 
-if [ consent -ne yes ]; then
+if [ "$consent" = "yes" ]; then
+	systemctl switch-root /mnt/ /stage3.sh
+else
 	echo Aborting installation.
-	exit -1
+	exit 5
 fi
 
-systemctl switch-root /mnt/ /stage3.sh
