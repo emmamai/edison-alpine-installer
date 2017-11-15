@@ -9,6 +9,16 @@ alpine_sub=.2
 rootfs_filename=alpine-minirootfs-${alpine_version}${alpine_sub}-x86.tar.gz
 rootfs_url=http://dl-cdn.alpinelinux.org/alpine/v${alpine_version}/releases/x86/alpine-minirootfs-${alpine_version}${alpine_sub}-x86.tar.gz
 
+stage2_url=https://raw.githubusercontent.com/emmamai/edison-${distro_short}-installer/master/stage2.sh
+stage3_url=https://raw.githubusercontent.com/emmamai/edison-${distro_short}-installer/master/stage3.sh
+
+
+###################################################
+# If you're modifying this to support a new distro,
+# you shouldn't need to edit anything below here,
+# probably
+###################################################
+
 edison_release=3.10.17-poky-edison+
 os_release=$(uname -r)
 force=no
@@ -62,6 +72,26 @@ if [ ! -f ${rootfs_filename} ]; then
 	fi
 fi
 
+if [ ! -f stage2.sh ]; then
+	echo == Downloading stage2...
+	wget ${stage2_url}
+	if [ ! $? ]; then
+		echo == Couldn\'t download stage2.
+		echo == Check your internet connection.
+		exit 3
+	fi
+fi
+
+if [ ! -f stage3.sh ]; then
+	echo == Downloading stage3...
+	wget ${stage3_url}
+	if [ ! $? ]; then
+		echo == Couldn\'t download stage3.
+		echo == Check your internet connection.
+		exit 3
+	fi
+fi
+
 echo Mounting tmpfs on /mnt
 
 mount -t tmpfs tmpfs /mnt
@@ -72,15 +102,43 @@ fi
 
 echo Extracting root filesystem
 
-tar -xf alpine-minirootfs-${alpine_version}-x86.tar.gz -C /mnt
+tar -xf ${rootfs_filename} -C /mnt
 if [ ! $? ]; then
 	echo == Failed to extract the archive.
 	exit 5
 fi
 
-echo =====================================
+echo Preparing to chroot and prep installation environment
+
+mount -t proc proc /mnt/proc
+mount -t sysfs sysfs /mnt/sys
+mount -t devtmpfs devtmpfs /mnt/dev
+cp /etc/resolv.conf /mnt/etc/resolv.conf
+cp stage2.sh /mnt/stage2.sh
+cp stage3.sh /mnt/stage3.sh
+
+echo Entering chroot
+
+chroot /mnt/ /stage2.sh
+
+echo ===================================================
 echo Download and preparation is complete.
 echo Ready to install $distro.
 echo "  "
-echo No changes have been made to your 
+echo No changes have been made to your system yet.
+echo If you continue, all of your data will be
+echo erased, and your operating system will be
+echo replaced with $distro.
+echo "  "
+echo If you wish to continue, type yes and press enter.
+echo Typing anything else will abort the installation.
+echo ===================================================
+echo -n "> "
+read consent
 
+if [ consent -ne yes ]; then
+	echo Aborting installation.
+	exit -1
+fi
+
+systemctl switch-root /mnt/ /stage3.sh
